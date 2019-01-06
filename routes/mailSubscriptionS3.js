@@ -23,7 +23,7 @@ let s3 = new AWS.S3({
 router.get("/", (req, res) => {
   res.status(200)
   .json({
-    data: "This is the HomePage of HopLite"
+    data: "This is the hompage of HopLite"
   });
 });
 
