@@ -13,7 +13,7 @@ const mailchimp =   new Mailchimp(MAILCHIMP_API_KEY);
 /**
  *  POST: Put 1 new member into the Mailchimp mailing list
  */
-router.post('/api/update/:email_address', async (req,res) => {
+router.post('/api/subscribe/:email_address', (req,res) => {
     let { email_address } = req.params;
 
     try {
@@ -46,7 +46,7 @@ router.post('/api/update/:email_address', async (req,res) => {
 /**
  *  POST: Put multiple emails into the Mailchimp mailing list in one batch action
  */
-router.post('/api/update/batch', async (req,res) => {
+router.post('/api/subscribe/batch', (req,res) => {
     let { emails } = req.body;
     let calls = [];
 
