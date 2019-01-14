@@ -81,11 +81,6 @@ router.get('/api/checkin/generate', async (req,res) => {
         // write the code and expiry date to the google sheets
         await updatePhysicalCode(res,code,expiresIn);
 
-        // return res.status(200).json({
-        //     success: true,
-        //     code, expiresIn
-        // });
-
     } catch(err) {
         return res.status(400).json({
             success: false,
@@ -143,25 +138,10 @@ const updatePhysicalCode = async (res,code,expiresIn) => {
         if (err) {
           throw new Error(err);
         } else {
-          var cache = [];
-
           return res.status(200).json({
             success: true,
             msg: "Successfully updated the generated code in Google Sheets",
-            code, expiresIn,
-            result: JSON.parse(JSON.stringify(result, (key, value) => {
-                if (typeof value === 'object' && value !== null) {
-                    if (cache.indexOf(value) !== -1) {
-                        try {
-                            return JSON.parse(JSON.stringify(value));
-                        } catch(err) {
-                            return;
-                        }
-                    }
-                    cache.push(value);
-                }
-                return value;
-            }))
+            code, expiresIn
           });
         }
       });
