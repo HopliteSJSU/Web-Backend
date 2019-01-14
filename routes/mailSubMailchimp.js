@@ -5,7 +5,7 @@ const Mailchimp =   require('mailchimp-api-v3');
 const router =      require('express').Router();
 
 // get all mailchimp-related variables
-const { MAILCHIMP_API_KEY, MAILCHIMP_LIST_ID } = process.env;
+const { MAILCHIMP_API_KEY, MAILCHIMP_LIST_ID } = require('../config/keys');
 
 // initialize mailchimp
 const mailchimp =   new Mailchimp(MAILCHIMP_API_KEY);

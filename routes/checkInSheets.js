@@ -4,21 +4,19 @@
 const router =   require('express').Router();
 const fs =       require('fs');
 const readline = require('readline');
-const {google} = require('googleapis');
+const { google } = require('googleapis');
+
+// insert sheet to be updated here
+const SPREADSHEET_ID = '1g-5V0al-le9z36ApxPKXCt6ZZe8NSwZWhL8pcmEyqg8';
+
+const callback_url = process.env.ENDPOINT_URL || "http://localhost:8080";
 
 // If modifying these scopes, delete token.json.
-const SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly'];
+const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
 // The file token.json stores the user's access and refresh tokens, and is
 // created automatically when the authorization flow completes for the first
 // time.
 const TOKEN_PATH = 'token.json';
-
-// Load client secrets from a local file.
-fs.readFile('credentials.json', (err, content) => {
-  if (err) return console.log('Error loading client secret file:', err);
-  // Authorize a client with credentials, then call the Google Sheets API.
-  authorize(JSON.parse(content), listMajors);
-});
 
 /**
  * Create an OAuth2 client with the given credentials, and then execute the
@@ -26,10 +24,11 @@ fs.readFile('credentials.json', (err, content) => {
  * @param {Object} credentials The authorization client credentials.
  * @param {function} callback The callback to call with the authorized client.
  */
-function authorize(credentials, callback) {
-  const {client_secret, client_id, redirect_uris} = credentials.installed;
+const authorize = (credentials, callback) => {
+  const {client_secret, client_id } = credentials.installed;
   const oAuth2Client = new google.auth.OAuth2(
-      client_id, client_secret, redirect_uris[0]);
+      client_id, client_secret, callback_url + '/auth/google/callback'
+      );
 
   // Check if we have previously stored a token.
   fs.readFile(TOKEN_PATH, (err, token) => {
@@ -45,7 +44,7 @@ function authorize(credentials, callback) {
  * @param {google.auth.OAuth2} oAuth2Client The OAuth2 client to get token for.
  * @param {getEventsCallback} callback The callback for the authorized client.
  */
-function getNewToken(oAuth2Client, callback) {
+const getNewToken = (oAuth2Client, callback) => {
   const authUrl = oAuth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: SCOPES,
@@ -71,50 +70,103 @@ function getNewToken(oAuth2Client, callback) {
 }
 
 /**
- * Prints the names and majors of students in a sample spreadsheet:
- * @see https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
- * @param {google.auth.OAuth2} auth The authenticated Google OAuth client.
- */
-function listMajors(auth) {
-  const sheets = google.sheets({version: 'v4', auth});
-  sheets.spreadsheets.values.get({
-    spreadsheetId: '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms',
-    range: 'Class Data!A2:E',
-  }, (err, res) => {
-    if (err) return console.log('The API returned an error: ' + err);
-    const rows = res.data.values;
-    if (rows.length) {
-      console.log('Name, Major:');
-      // Print columns A and E, which correspond to indices 0 and 4.
-      rows.map((row) => {
-        console.log(`${row[0]}, ${row[4]}`);
-      });
-    } else {
-      console.log('No data found.');
-    }
-  });
-}
-
-/**
  * GET
  * Get unique session check in code 
  */
-router.get('/api/checkin/generate_code', (req,res) => {
+router.get('/api/checkin/generate', async (req,res) => {
     try {
         let code = Math.random().toString(36).substring(7);     // 5 digit alphanumeric code for physical presence validation
         let expiresIn = Date.now() + 7200000;   // expires in 2 hours after code is created, usual one session of Hoplite
 
-        return res.status(200).json({
-            success: true,
-            code, expiresIn
-        });
+        // write the code and expiry date to the google sheets
+        await updatePhysicalCode(res,code,expiresIn);
+
+        // return res.status(200).json({
+        //     success: true,
+        //     code, expiresIn
+        // });
 
     } catch(err) {
         return res.status(400).json({
             success: false,
             err,
-        })
+        });
     }
 });
+
+router.get('/auth/google/callback', (req,res) => {
+  res.send({
+    code: req.query.code
+  });
+});
+
+/**
+ * POST
+ * Write/update members attendance, create new row if needed
+ */
+router.post('/api/checkin/update', (req,res) => {
+  try {
+
+  } catch(err) {
+
+  }
+});
+
+
+/**
+ * Function to paste the newly generated code onto the club's sheet
+ * @param {Object} auth is the object returned from the authorize function, where the return value is OAuth2Client
+ */
+const updatePhysicalCode = async (res,code,expiresIn) => {
+  fs.readFile('./config/credentials.json', (err, content) => {
+    if (err) return console.log('Error loading client secret file:', err);
+    // Authorize a client with credentials, then call the Google Sheets API.
+    authorize(JSON.parse(content), auth => {
+      const sheets = google.sheets({version: 'v4', auth});
+      let values = [
+        [
+          code, expiresIn
+        ],
+      ];
+
+      const resource = {
+        values
+      };
+    
+      sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: 'A:B',
+        valueInputOption: 'RAW',
+        auth,
+        resource
+      }, (err, result) => {
+        if (err) {
+          throw new Error(err);
+        } else {
+          var cache = [];
+
+          return res.status(200).json({
+            success: true,
+            msg: "Successfully updated the generated code in Google Sheets",
+            code, expiresIn,
+            result: JSON.parse(JSON.stringify(result, (key, value) => {
+                if (typeof value === 'object' && value !== null) {
+                    if (cache.indexOf(value) !== -1) {
+                        try {
+                            return JSON.parse(JSON.stringify(value));
+                        } catch(err) {
+                            return;
+                        }
+                    }
+                    cache.push(value);
+                }
+                return value;
+            }))
+          });
+        }
+      });
+    });
+  });
+}
 
 module.exports = router;
