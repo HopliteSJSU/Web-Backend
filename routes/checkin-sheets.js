@@ -89,6 +89,12 @@ router.get('/api/checkin/generate', async (req,res) => {
     }
 });
 
+/**
+ * GET
+ * Route returns a JSON file with the code needed to generate token.json
+ * Use this route after validating the Google account that has access to read/write the desired Google Sheets
+ * Please check if the sheets ID in config matches the desired sheets to be updated
+ */
 router.get('/auth/google/callback', (req,res) => {
   res.send({
     code: req.query.code
@@ -123,6 +129,12 @@ router.post('/api/checkin/update', (req,res) => {
   }
 });
 
+/**
+ * Function to update/upsert the check in count belonging to the argument's email
+ * @param {Object} res The response object passed in from express
+ * @param {String} code The physical validation code
+ * @param {String} email The email to increase the check in count for
+ */
 const updateEmail = (res,code,email) => {
   fs.readFile('./config/credentials.json', (err, content) => {
     if (err) return console.log('Error loading client secret file:', err);
