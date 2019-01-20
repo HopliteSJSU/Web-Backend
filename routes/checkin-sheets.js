@@ -76,7 +76,7 @@ const getNewToken = (oAuth2Client, callback) => {
 router.get('/api/checkin/generate', async (req,res) => {
     try {
         let code = Math.random().toString(36).substring(7);     // 5 digit alphanumeric code for physical presence validation
-        let expiresIn = Date.now() + 7200000;   // expires in 2 hours after code is created, usual one session of Hoplite
+        let expiresIn = Date.now() + 300000;   // expires in 5 minutes after code is created
 
         // write the code and expiry date to the google sheets
         await updatePhysicalCode(res,code,expiresIn);
