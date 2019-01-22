@@ -71,7 +71,7 @@ const getNewToken = (oAuth2Client, callback) => {
 
 /**
  * GET
- * Get unique session check in code 
+ * Get unique session check in code
  */
 router.get('/api/checkin/generate', async (req,res) => {
     try {
@@ -141,7 +141,7 @@ const updateEmail = (res,code,email) => {
     // Authorize a client with credentials, then call the Google Sheets API.
     authorize(JSON.parse(content), auth => {
       const sheets = google.sheets({version: 'v4', auth});
-    
+
       sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
         range: 'A2:B2',
@@ -165,7 +165,7 @@ const updateEmail = (res,code,email) => {
                 throw new Error(err);
               } else {
                 let membersArr = memberResponse.data.values;
-                
+
                 if (membersArr !== undefined && membersArr) {
                   try {
                     membersArr.forEach((v,i) => {
@@ -176,7 +176,7 @@ const updateEmail = (res,code,email) => {
                           membersArr[i][2] = Date.now();
                         } else {
                           numDays = Number((Number(v[2]) + 518300000 - Date.now()) / 86400000).toFixed(0);
-                      
+
                           throw new Error(`Cannot check in more than once in a week, try again in ${ numDays === 0 ? 'a few hours' : `${ numDays } days`}`);
                         }
                       }
@@ -197,7 +197,7 @@ const updateEmail = (res,code,email) => {
                 }
 
                 let values = membersArr;
-          
+
                 const resource = {
                   values
                 };
@@ -254,7 +254,7 @@ const updatePhysicalCode = async (res,code,expiresIn) => {
       const resource = {
         values
       };
-    
+
       sheets.spreadsheets.values.update({
         spreadsheetId: SPREADSHEET_ID,
         range: 'A2:B2',

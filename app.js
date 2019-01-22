@@ -15,7 +15,7 @@ require('dotenv').config();
 /**
  * Route Handler
  */
-let indexRoutes     = require('./routes/index.js');
+let { mailchimp, checkIn }     = require('./routes/index.js');
 
 /**
  * Create Express server.
@@ -42,8 +42,8 @@ app.use(cors());
 /**
  * Primary app routes.
  */
-app.use(indexRoutes);
-
+app.use(mailchimp);
+app.use(checkIn);
 /**
  * Start Express server.
  */
