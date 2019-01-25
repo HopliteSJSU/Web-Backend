@@ -158,7 +158,7 @@ const updateEmail = (res,code,email) => {
           if (code === codeArr[0] && Date.now() < Number(codeArr[1])) {
             sheets.spreadsheets.values.get({
               spreadsheetId: SPREADSHEET_ID,
-              range: 'A5:C',
+              range: 'A5:G',
               auth,
             }, (err, memberResponse) => {
               if (err) {
@@ -167,16 +167,31 @@ const updateEmail = (res,code,email) => {
                 let membersArr = memberResponse.data.values;
 
                 if (membersArr !== undefined && membersArr) {
+                  let date = new Date();
+                  var dayOfWeek = date.getDay();
+                  let emailExists = false;
+
                   try {
                     membersArr.forEach((v,i) => {
-                      if (v[0] === email) {
-                        if (Date.now() > Number(v[2]) + 518300000) {
-                          // if the current date in milliseconds is more than 5.98 days since last member check in, execute this
-                          membersArr[i][1] += 1;
-                          membersArr[i][2] = Date.now();
-                        } else {
-                          numDays = Number((Number(v[2]) + 518300000 - Date.now()) / 86400000).toFixed(0);
+                      if (String(v[0]).split('\'').join('') === email.trim()) {
+                        emailExists = true;
 
+                        if (dayOfWeek === 4 && Date.now() < membersArr[i][2] + 518400000) {
+                          membersArr[i][1] = Number(membersArr[i][1]) + 1;
+                          membersArr[i][2] = Number(membersArr[i][2]) + 1;
+                          membersArr[i][4] = Date.now();
+                          membersArr[i][6] = date.toLocaleDateString();
+                        } else if (dayOfWeek === 5 && Date.now() < membersArr[i][2] + 518400000) {
+                          membersArr[i][1] = Number(membersArr[i][1]) + 1;
+                          membersArr[i][3] = Number(membersArr[i][3]) + 1;
+                          membersArr[i][5] = Date.now();
+                          membersArr[i][6] = date.toLocaleDateString();
+                        } else {
+                          numDays = Number((Number(v[dayOfWeek]) + 518400000 - Date.now()) / 86400000).toFixed(0);
+
+                          if (dayOfWeek === 4)
+                            numDays = 1;
+                            
                           throw new Error(`Cannot check in more than once in a week, try again in ${ numDays === 0 ? 'a few hours' : `${ numDays } days`}`);
                         }
                       }
@@ -184,16 +199,31 @@ const updateEmail = (res,code,email) => {
                   } catch(err) {
                     return res.status(400).json({
                       success: false,
-                      msg: `Cannot check in more than once in a week, try again in ${ numDays === 0 ? 'a few hours' : `${ numDays } days`}`,
-                      err: err.msg
+                      msg: `Cannot check in more than once in a week on the same, try again in ${ numDays === 0 ? 'a few hours' : `${ numDays } days`}`,
                     });
                   }
 
-                  // if email doesn't already exist, append it to the membersArr
-                  membersArr[membersArr.length + 1] = [email, 1, Date.now()];
+                  // if email doesn't already exist, but there are entries present inside the sheets append it to the membersArr
+                  if (!emailExists) {
+                    membersArr.push([ email.trim(), 1, 0, 0, -1, -1, date.toLocaleDateString() ]);
+
+                    if (dayOfWeek === 4)
+                      membersArr[membersArr.length - 1][3] = 1;
+                    else
+                      membersArr[membersArr.length - 1][4] = 1;
+                    
+                    membersArr[membersArr.length - 1][dayOfWeek] = Date.now();
+                  }
                 } else {
                   membersArr = [];
-                  membersArr.push([email,1,Date.now()]);
+                  membersArr.push([ email.trim(), 1, 0, 0, -1, -1, new Date().toLocaleDateString() ]);
+
+                  if (new Date().getDay() === 4)
+                    membersArr[0][2] = 1;
+                  else
+                    membersArr[0][3] = 1;
+                  
+                  membersArr[0][new Date().getDay()] = Date.now();
                 }
 
                 let values = membersArr;
@@ -204,7 +234,7 @@ const updateEmail = (res,code,email) => {
 
                 sheets.spreadsheets.values.update({
                   spreadsheetId: SPREADSHEET_ID,
-                  range: 'A5:C',
+                  range: 'A5:G',
                   valueInputOption: 'RAW',
                   auth,
                   resource
