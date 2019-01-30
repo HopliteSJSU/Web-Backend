@@ -77,7 +77,7 @@ const getNewToken = (oAuth2Client, callback) => {
 router.get('/api/checkin/generate', async (req,res) => {
     try {
         let code = Math.random().toString(36).substring(7);     // 5 digit alphanumeric code for physical presence validation
-        let expiresIn = Date.now() + 400000;   // expires in 5 minutes after code is created
+        let expiresIn = Date.now() + 300000;   // expires in 5 minutes after code is created
 
         // write the code and expiry date to the google sheets
         await updatePhysicalCode(res,code,expiresIn);
@@ -171,12 +171,12 @@ const updateEmail = (res,code,email) => {
                   let date = new Date();
                   var dayOfWeek = date.getDay();
                   let emailExists = false;
-                  console.log(dayOfWeek);
 
                   try {
                     membersArr.forEach((v,i) => {
                       if (String(v[0]).split('\'').join('') === email.trim()) {
                         emailExists = true;
+                        console.log(Number('N/A'))
                         
                         if (dayOfWeek === 4 && Date.now() > Number(membersArr[i][dayOfWeek]) + 518300000) {
                           membersArr[i][1] = Number(membersArr[i][1]) + 1;
@@ -210,7 +210,7 @@ const updateEmail = (res,code,email) => {
                   // if email doesn't already exist, but there are entries present inside the sheets append it to the membersArr
                   if (!emailExists) {
                     if (dayOfWeek === 4 || dayOfWeek === 5) {
-                      membersArr.push([ email.trim(), 1, 0, 0, -1, -1, date.toLocaleDateString() ]);
+                      membersArr.push([ email.trim(), 1, 0, 0, 'N/A', 'N/A', date.toLocaleDateString() ]);
 
                       if (dayOfWeek === 4)
                         membersArr[membersArr.length - 1][3] = 1;
@@ -231,7 +231,7 @@ const updateEmail = (res,code,email) => {
                   let dayOfWeek = date.getDay();
                   
                   if (dayOfWeek === 4 || dayOfWeek === 5) {
-                    membersArr.push([ email.trim(), 1, 0, 0, -1, -1, new Date().toLocaleDateString() ]);
+                    membersArr.push([ email.trim(), 1, 0, 0, 'N/A', 'N/A', new Date().toLocaleDateString() ]);
 
                     if (dayOfWeek === 4)
                       membersArr[0][2] = 1;
