@@ -48,6 +48,7 @@ const getNewToken = (oAuth2Client, callback) => {
   const authUrl = oAuth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: SCOPES,
+    prompt: 'consent'
   });
   console.log('Authorize this app by visiting this url:', authUrl);
   const rl = readline.createInterface({
@@ -76,7 +77,7 @@ const getNewToken = (oAuth2Client, callback) => {
 router.get('/api/checkin/generate', async (req,res) => {
     try {
         let code = Math.random().toString(36).substring(7);     // 5 digit alphanumeric code for physical presence validation
-        let expiresIn = Date.now() + 300000;   // expires in 5 minutes after code is created
+        let expiresIn = Date.now() + 400000;   // expires in 5 minutes after code is created
 
         // write the code and expiry date to the google sheets
         await updatePhysicalCode(res,code,expiresIn);
@@ -170,58 +171,80 @@ const updateEmail = (res,code,email) => {
                   let date = new Date();
                   var dayOfWeek = date.getDay();
                   let emailExists = false;
+                  console.log(dayOfWeek);
 
                   try {
                     membersArr.forEach((v,i) => {
                       if (String(v[0]).split('\'').join('') === email.trim()) {
                         emailExists = true;
-
-                        if (dayOfWeek === 4 && Date.now() > Number(membersArr[i][dayOfWeek]) + 518400000) {
+                        
+                        if (dayOfWeek === 4 && Date.now() > Number(membersArr[i][dayOfWeek]) + 518300000) {
                           membersArr[i][1] = Number(membersArr[i][1]) + 1;
                           membersArr[i][2] = Number(membersArr[i][2]) + 1;
                           membersArr[i][4] = Date.now();
                           membersArr[i][6] = date.toLocaleDateString();
-                        } else if (dayOfWeek === 5 && Date.now() > Number(membersArr[i][dayOfWeek]) + 518400000) {
+                        } else if (dayOfWeek === 5 && Date.now() > Number(membersArr[i][dayOfWeek]) + 518300000) {
                           membersArr[i][1] = Number(membersArr[i][1]) + 1;
                           membersArr[i][3] = Number(membersArr[i][3]) + 1;
                           membersArr[i][5] = Date.now();
                           membersArr[i][6] = date.toLocaleDateString();
                         } else {
-                          numDays = Number((Number(v[dayOfWeek]) + 518400000 - Date.now()) / 86400000).toFixed(0);
+                          if (dayOfWeek < 4)
+                            numDays = 4 - dayOfWeek;
+                          else if (dayOfWeek >= 5)
+                            numDays = 6 - dayOfWeek + 5
+                          else if (dayOfWeek === 4)
+                            numDays = 1
 
-                          if (dayOfWeek === 4)
-                            numDays = 1;
+                          throw new Error();
                         }
                       }
                     });
                   } catch(err) {
                     return res.status(400).json({
                       success: false,
-                      msg: `Cannot check in more than once in a week or on the same day, try again in ${ numDays === 0 ? 'a few hours' : `${ numDays } days`}`,
+                      msg: `You are checking in more than once on the same day, or checking in when club meeting is not in session, try again in ${ numDays === 0 ? 'a few hours' : `${ numDays } day(s)`}`,
                     });
                   }
 
                   // if email doesn't already exist, but there are entries present inside the sheets append it to the membersArr
                   if (!emailExists) {
-                    membersArr.push([ email.trim(), 1, 0, 0, -1, -1, date.toLocaleDateString() ]);
+                    if (dayOfWeek === 4 || dayOfWeek === 5) {
+                      membersArr.push([ email.trim(), 1, 0, 0, -1, -1, date.toLocaleDateString() ]);
 
-                    if (dayOfWeek === 4)
-                      membersArr[membersArr.length - 1][3] = 1;
-                    else
-                      membersArr[membersArr.length - 1][4] = 1;
-                    
-                    membersArr[membersArr.length - 1][dayOfWeek] = Date.now();
+                      if (dayOfWeek === 4)
+                        membersArr[membersArr.length - 1][3] = 1;
+                      else if (dayOfWeek === 5)
+                        membersArr[membersArr.length - 1][4] = 1;
+                      
+                      membersArr[membersArr.length - 1][dayOfWeek] = Date.now();
+                    } else {
+                      return res.status(400).json({
+                        success: false,
+                        msg: 'Today is not a day to check in! Please try again on Thursday or Friday'
+                      });
+                    }
                   }
                 } else {
                   membersArr = [];
-                  membersArr.push([ email.trim(), 1, 0, 0, -1, -1, new Date().toLocaleDateString() ]);
-
-                  if (new Date().getDay() === 4)
-                    membersArr[0][2] = 1;
-                  else
-                    membersArr[0][3] = 1;
+                  let date = new Date();
+                  let dayOfWeek = date.getDay();
                   
-                  membersArr[0][new Date().getDay()] = Date.now();
+                  if (dayOfWeek === 4 || dayOfWeek === 5) {
+                    membersArr.push([ email.trim(), 1, 0, 0, -1, -1, new Date().toLocaleDateString() ]);
+
+                    if (dayOfWeek === 4)
+                      membersArr[0][2] = 1;
+                    else if (dayOfWeek === 5)
+                      membersArr[0][3] = 1;
+                  
+                    membersArr[0][dayOfWeek] = Date.now();
+                  } else {
+                    return res.status(400).json({
+                      success: false,
+                      msg: 'Today is not a day to check in! Please try again on Thursday or Friday'
+                    });
+                  }
                 }
 
                 let values = membersArr;
@@ -291,7 +314,7 @@ const updatePhysicalCode = async (res,code,expiresIn) => {
         resource
       }, (err, result) => {
         if (err) {
-          throw new Error(err);
+          console.log(err);
         } else {
           return res.status(200).json({
             success: true,
