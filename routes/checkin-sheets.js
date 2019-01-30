@@ -176,7 +176,6 @@ const updateEmail = (res,code,email) => {
                     membersArr.forEach((v,i) => {
                       if (String(v[0]).split('\'').join('') === email.trim()) {
                         emailExists = true;
-                        console.log(Number('N/A'))
                         
                         if (dayOfWeek === 4 && Date.now() > Number(membersArr[i][dayOfWeek]) + 518300000) {
                           membersArr[i][1] = Number(membersArr[i][1]) + 1;
