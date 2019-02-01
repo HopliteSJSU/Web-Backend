@@ -77,7 +77,7 @@ const getNewToken = (oAuth2Client, callback) => {
 router.get('/api/checkin/generate', async (req,res) => {
     try {
         let code = Math.random().toString(36).substring(7);     // 5 digit alphanumeric code for physical presence validation
-        let expiresIn = Date.now() + 600000;   // expires in 5 minutes after code is created
+        let expiresIn = Date.now() + 600000;   // expires in 10 minutes after code is created
 
         // write the code and expiry date to the google sheets
         await updatePhysicalCode(res,code,expiresIn);
@@ -118,9 +118,9 @@ router.post('/api/checkin/update', (req,res) => {
 
     if (code === undefined || !code || !code.length || emailSplit.length !== 2 || emailSplit[1] !== 'sjsu.edu')
       throw new Error('Invalid form information sent to server, check if code is valid and email must be @sjsu.edu');
-    else 
+    else
       updateEmail(res,code,email);
-    
+
   } catch(err) {
     console.log(err);
     return res.status(400).json({
@@ -176,7 +176,7 @@ const updateEmail = (res,code,email) => {
                     membersArr.forEach((v,i) => {
                       if (String(v[0]).split('\'').join('') === email.trim()) {
                         emailExists = true;
-                        
+
                         if (dayOfWeek === 4 && (Date.now() > Number(membersArr[i][dayOfWeek]) + 518300000 || membersArr[i][dayOfWeek] === 'N/A')) {
                           membersArr[i][1] = Number(membersArr[i][1]) + 1;
                           membersArr[i][2] = Number(membersArr[i][2]) + 1;
@@ -212,10 +212,10 @@ const updateEmail = (res,code,email) => {
                       membersArr.push([ email.trim(), 1, 0, 0, 'N/A', 'N/A', date.toLocaleDateString() ]);
 
                       if (dayOfWeek === 4)
-                        membersArr[membersArr.length - 1][3] = 1;
+                        membersArr[membersArr.length - 1][dayOfWeek - 2] = 1;
                       else if (dayOfWeek === 5)
-                        membersArr[membersArr.length - 1][4] = 1;
-                      
+                        membersArr[membersArr.length - 1][dayOfWeek - 2] = 1;
+
                       membersArr[membersArr.length - 1][dayOfWeek] = Date.now();
                     } else {
                       return res.status(400).json({
@@ -228,7 +228,7 @@ const updateEmail = (res,code,email) => {
                   membersArr = [];
                   let date = new Date();
                   let dayOfWeek = date.getDay();
-                  
+
                   if (dayOfWeek === 4 || dayOfWeek === 5) {
                     membersArr.push([ email.trim(), 1, 0, 0, 'N/A', 'N/A', new Date().toLocaleDateString() ]);
 
@@ -236,7 +236,7 @@ const updateEmail = (res,code,email) => {
                       membersArr[0][2] = 1;
                     else if (dayOfWeek === 5)
                       membersArr[0][3] = 1;
-                  
+
                     membersArr[0][dayOfWeek] = Date.now();
                   } else {
                     return res.status(400).json({
