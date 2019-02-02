@@ -177,12 +177,12 @@ const updateEmail = (res,code,email) => {
                       if (String(v[0]).split('\'').join('') === email.trim()) {
                         emailExists = true;
                         
-                        if (dayOfWeek === 4 && Date.now() > Number(membersArr[i][dayOfWeek]) + 518300000) {
+                        if (dayOfWeek === 4 && (Date.now() > Number(membersArr[i][dayOfWeek]) + 518300000 || membersArr[i][dayOfWeek] === 'N/A')) {
                           membersArr[i][1] = Number(membersArr[i][1]) + 1;
                           membersArr[i][2] = Number(membersArr[i][2]) + 1;
                           membersArr[i][4] = Date.now();
                           membersArr[i][6] = date.toLocaleDateString();
-                        } else if (dayOfWeek === 5 && Date.now() > Number(membersArr[i][dayOfWeek]) + 518300000) {
+                        } else if (dayOfWeek === 5 && Date.now() > (Number(membersArr[i][dayOfWeek]) + 518300000) || membersArr[i][dayOfWeek] === 'N/A') {
                           membersArr[i][1] = Number(membersArr[i][1]) + 1;
                           membersArr[i][3] = Number(membersArr[i][3]) + 1;
                           membersArr[i][5] = Date.now();
