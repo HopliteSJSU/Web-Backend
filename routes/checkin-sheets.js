@@ -18,6 +18,14 @@ const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
 // time.
 const TOKEN_PATH = 'token.json';
 
+// Constants for spreadsheet positions
+const THURSDAY = 4
+const FRIDAY = 5
+
+const TOTAL_CHECKIN_COL = 1
+const THURSDAY_COL = 2
+const FRIDAY_COL = 3
+
 /**
  * Create an OAuth2 client with the given credentials, and then execute the
  * given callback function.
@@ -177,14 +185,14 @@ const updateEmail = (res,code,email) => {
                       if (String(v[0]).split('\'').join('') === email.trim()) {
                         emailExists = true;
 
-                        if (dayOfWeek === 4 && (Date.now() > Number(membersArr[i][dayOfWeek]) + 518300000 || membersArr[i][dayOfWeek] === 'N/A')) {
-                          membersArr[i][1] = Number(membersArr[i][1]) + 1;
-                          membersArr[i][2] = Number(membersArr[i][2]) + 1;
+                        if (dayOfWeek === THURSDAY && (Date.now() > Number(membersArr[i][dayOfWeek]) + 518300000 || membersArr[i][dayOfWeek] === 'N/A')) {
+                          membersArr[i][TOTAL_CHECKIN_COL] = Number(membersArr[i][1]) + 1;
+                          membersArr[i][THURSDAY_COL] = Number(membersArr[i][THURSDAY_COL]) + 1;
                           membersArr[i][4] = Date.now();
                           membersArr[i][6] = date.toLocaleDateString();
-                        } else if (dayOfWeek === 5 && Date.now() > (Number(membersArr[i][dayOfWeek]) + 518300000) || membersArr[i][dayOfWeek] === 'N/A') {
-                          membersArr[i][1] = Number(membersArr[i][1]) + 1;
-                          membersArr[i][3] = Number(membersArr[i][3]) + 1;
+                        } else if (dayOfWeek === FRIDAY && Date.now() > (Number(membersArr[i][dayOfWeek]) + 518300000) || membersArr[i][dayOfWeek] === 'N/A') {
+                          membersArr[i][TOTAL_CHECKIN_COL] = Number(membersArr[i][1]) + 1;
+                          membersArr[i][FRIDAY_COL] = Number(membersArr[i][FRIDAY_COL]) + 1;
                           membersArr[i][5] = Date.now();
                           membersArr[i][6] = date.toLocaleDateString();
                         } else {
@@ -208,13 +216,13 @@ const updateEmail = (res,code,email) => {
 
                   // if email doesn't already exist, but there are entries present inside the sheets append it to the membersArr
                   if (!emailExists) {
-                    if (dayOfWeek === 4 || dayOfWeek === 5) {
+                    if (dayOfWeek === THURSDAY || dayOfWeek === FRIDAY) {
                       membersArr.push([ email.trim(), 1, 0, 0, 'N/A', 'N/A', date.toLocaleDateString() ]);
 
-                      if (dayOfWeek === 4)
-                        membersArr[membersArr.length - 1][dayOfWeek - 2] = 1;
-                      else if (dayOfWeek === 5)
-                        membersArr[membersArr.length - 1][dayOfWeek - 2] = 1;
+                      if (dayOfWeek === THURSDAY)
+                        membersArr[membersArr.length - 1][THURSDAY_COL] = 1;
+                      else if (dayOfWeek === FRIDAY)
+                        membersArr[membersArr.length - 1][FRIDAY_COL] = 1;
 
                       membersArr[membersArr.length - 1][dayOfWeek] = Date.now();
                     } else {
@@ -229,13 +237,13 @@ const updateEmail = (res,code,email) => {
                   let date = new Date();
                   let dayOfWeek = date.getDay();
 
-                  if (dayOfWeek === 4 || dayOfWeek === 5) {
+                  if (dayOfWeek === THURSDAY || dayOfWeek === FRIDAY) {
                     membersArr.push([ email.trim(), 1, 0, 0, 'N/A', 'N/A', new Date().toLocaleDateString() ]);
 
-                    if (dayOfWeek === 4)
-                      membersArr[0][2] = 1;
-                    else if (dayOfWeek === 5)
-                      membersArr[0][3] = 1;
+                    if (dayOfWeek === THURSDAY)
+                      membersArr[0][THURSDAY_COL] = 1;
+                    else if (dayOfWeek === FRIDAY)
+                      membersArr[0][FRIDAY_COL] = 1;
 
                     membersArr[0][dayOfWeek] = Date.now();
                   } else {
