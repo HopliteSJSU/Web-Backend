@@ -115,11 +115,11 @@ router.post('/api/checkin/update', (req,res) => {
     else
       throw new Error('Check your email again');
 
-    if (code === undefined || !code || !code.length || emailSplit.length !== 2 || emailSplit[1] !== 'sjsu.edu') {
+    if (code === undefined || !code || !code.length || emailSplit.length !== 2 || emailSplit[1] !== 'sjsu.edu')
       throw new Error('Invalid form information sent to server, check if code is valid and email must be @sjsu.edu');
-    } else {
+    else 
       updateEmail(res,code,email);
-    }
+    
   } catch(err) {
     console.log(err);
     return res.status(400).json({
@@ -148,7 +148,7 @@ const updateEmail = (res,code,email) => {
         auth,
       }, (err, codeResponse) => {
         if (err) {
-          throw new Error(err);
+          console.log(err);
         } else {
           // 0th index of codeArr contains the physical validation code
           // 1st index of codeArr contains the expiryDate in epoch millisecs
@@ -162,7 +162,7 @@ const updateEmail = (res,code,email) => {
               auth,
             }, (err, memberResponse) => {
               if (err) {
-                throw new Error(err);
+                console.log(err);
               } else {
                 let membersArr = memberResponse.data.values;
 
@@ -176,12 +176,12 @@ const updateEmail = (res,code,email) => {
                       if (String(v[0]).split('\'').join('') === email.trim()) {
                         emailExists = true;
 
-                        if (dayOfWeek === 4 && Date.now() < membersArr[i][2] + 518400000) {
+                        if (dayOfWeek === 4 && Date.now() > Number(membersArr[i][dayOfWeek]) + 518400000) {
                           membersArr[i][1] = Number(membersArr[i][1]) + 1;
                           membersArr[i][2] = Number(membersArr[i][2]) + 1;
                           membersArr[i][4] = Date.now();
                           membersArr[i][6] = date.toLocaleDateString();
-                        } else if (dayOfWeek === 5 && Date.now() < membersArr[i][2] + 518400000) {
+                        } else if (dayOfWeek === 5 && Date.now() > Number(membersArr[i][dayOfWeek]) + 518400000) {
                           membersArr[i][1] = Number(membersArr[i][1]) + 1;
                           membersArr[i][3] = Number(membersArr[i][3]) + 1;
                           membersArr[i][5] = Date.now();
@@ -191,15 +191,13 @@ const updateEmail = (res,code,email) => {
 
                           if (dayOfWeek === 4)
                             numDays = 1;
-                            
-                          throw new Error(`Cannot check in more than once in a week, try again in ${ numDays === 0 ? 'a few hours' : `${ numDays } days`}`);
                         }
                       }
                     });
                   } catch(err) {
                     return res.status(400).json({
                       success: false,
-                      msg: `Cannot check in more than once in a week on the same, try again in ${ numDays === 0 ? 'a few hours' : `${ numDays } days`}`,
+                      msg: `Cannot check in more than once in a week or on the same day, try again in ${ numDays === 0 ? 'a few hours' : `${ numDays } days`}`,
                     });
                   }
 
