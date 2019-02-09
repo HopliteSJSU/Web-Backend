@@ -255,7 +255,7 @@ const updateEmail = (res,code,email) => {
                 sheets.spreadsheets.values.update({
                   spreadsheetId: SPREADSHEET_ID,
                   range: 'A5:G',
-                  valueInputOption: 'RAW',
+                  valueInputOption: 'USER_ENTERED',
                   auth,
                   resource
                 }, (err, result) => {
